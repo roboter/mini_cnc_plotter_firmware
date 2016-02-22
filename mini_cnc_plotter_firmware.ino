@@ -6,27 +6,21 @@
  More information about the Mini CNC Plotter here (german, sorry): http://www.makerblog.at/2015/02/projekt-mini-cnc-plotter-aus-alten-cddvd-laufwerken/
   */
 
-#include <Servo.h>
+
 #include <Stepper.h>
 
 #define LINE_BUFFER_LENGTH 512
 
-// Servo position for Up and Down 
-const int penZUp = 40;
-const int penZDown = 85;
-
-// Servo on PWM pin 6
-const int penServoPin = 6;
 
 // Should be right for DVD steppers, but is not too important here
 const int stepsPerRevolution = 20; 
 
-// create servo object to control a servo 
-Servo penServo;  
-
 // Initialize steppers for X- and Y-axis using this Arduino pins for the L293D H-bridge
-Stepper myStepperY(stepsPerRevolution, 2,3,4,5);            
-Stepper myStepperX(stepsPerRevolution, 8,9,10,11);  
+//Stepper myStepper(stepsPerRevolution, 2, 3, 4, 5); // Z motor
+//Stepper myStepperZ(stepsPerRevolution, 2,3,4,5);            
+Stepper myStepperX(stepsPerRevolution, 6,7,8,9);  
+Stepper myStepperY(stepsPerRevolution, 10,11,12,13);  
+
 
 /* Structures, global variables    */
 struct point { 
@@ -47,8 +41,8 @@ int penDelay = 50;
 // Motor steps to go 1 millimeter.
 // Use test sketch to go 100 steps. Measure the length of line. 
 // Calculate steps per mm. Enter here.
-float StepsPerMillimeterX = 6.0;
-float StepsPerMillimeterY = 6.0;
+float StepsPerMillimeterX = 2.354;
+float StepsPerMillimeterY = 30;
 
 // Drawing robot limits, in mm
 // OK to start with. Could go up to 50 mm if calibrated well. 
@@ -74,24 +68,30 @@ boolean verbose = false;
 //  Discard anything with a (
 //  Discard any other command!
 
+unsigned int delay_s= 15;
+unsigned int steps= 40;
+
 /**********************
  * void setup() - Initialisations
  ***********************/
 void setup() {
   //  Setup
-  Serial.begin( 9600 );
+  Serial.begin( 9600 );    
   
-  penServo.attach(penServoPin);
-  penServo.write(penZUp);
   delay(200);
 
   // Decrease if necessary
   myStepperX.setSpeed(250);
   myStepperY.setSpeed(250);  
-
+  //myStepperZ.setSpeed(100);
+pinMode(2, OUTPUT);
+pinMode(3, OUTPUT);
+pinMode(4, OUTPUT);
+pinMode(5, OUTPUT);
   //  Set & move to initial default position
   // TBD
 
+  Serial.println("Grbl 0.9j ['$' for help]");
   //  Notifications!!!
   Serial.println("Mini CNC Plotter alive and kicking!");
   Serial.print("X range is from "); 
@@ -264,9 +264,6 @@ void processIncomingLine( char* line, int charNB ) {
       }
     }
   }
-
-
-
 }
 
 
@@ -384,19 +381,43 @@ void drawLine(float x1, float y1) {
 
 //  Raises pen
 void penUp() { 
-  penServo.write(penZUp); 
-  delay(LineDelay); 
-  Zpos=Zmax; 
-  if (verbose) { 
-    Serial.println("Pen up!"); 
-  } 
+  //digitalWrite(LASER,LOW);  
+//  myStepperZ.step(-stepsPerRevolution);
+  for (int i = 0; i!=steps; i++)
+  {
+    step(3);
+    step(4);  
+    step(2);
+    step(5);
+  }
+ // delay(LineDelay); 
+//  Zpos=Zmax; 
+//  if (verbose) { 
+//    Serial.println("Pen up!"); 
+//  } 
 }
 //  Lowers pen
 void penDown() { 
-  penServo.write(penZDown); 
-  delay(LineDelay); 
-  Zpos=Zmin; 
-  if (verbose) { 
-    Serial.println("Pen down."); 
-  } 
+//  //digitalWrite(LASER,HIGH);
+//  myStepperZ.step(stepsPerRevolution);
+//  delay(LineDelay); 
+//  Zpos=Zmin; 
+//  if (verbose) { 
+//    Serial.println("Pen down."); 
+//  } 
+  for (int i = 0; i!=steps; i++)
+  {
+    step(5);
+    step(2);  
+    step(4);
+    step(3);
+  }
+}
+void step(int pin)
+{
+  digitalWrite(pin, HIGH);
+  delay(delay_s);
+  digitalWrite(pin, LOW);
+  delay(delay_s);
+
 }
